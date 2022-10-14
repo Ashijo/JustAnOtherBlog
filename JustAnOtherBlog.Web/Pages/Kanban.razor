@@ -1,0 +1,137 @@
+@page "/kanban"
+@using JustAnOtherBlog.Web.wwwroot.Components
+@using JustAnOtherBlog.Web.wwwroot.Enums
+@inject HttpClient Http
+
+
+<PageTitle>Kanban</PageTitle>
+
+<MudText Class="mb-8">Making a Kanban is, in my opinion, one of the best way to learn the basis of a new language/framework</MudText>
+
+
+<MudPaper Class="pa-4">
+    <MudForm @ref="_addForm" @bind-IsValid="@_success" @bind-Errors="@_errors">
+        <MudTextField T="string" Label="Title" Variant="Variant.Outlined" Required="true" RequiredError="Title is required!" @ref="_addTitle"/>
+        <MudTextField T="string" Label="Description" Variant="Variant.Outlined" Lines="5" @ref="_addDesc" />
+        <MudDivider Class="ma-2" />
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" DisableElevation="true" OnClick="AddNewTask">Add new task</MudButton>
+    </MudForm>   
+</MudPaper>
+
+
+
+<MudDivider Class="ma-2" />
+
+
+<MudDropContainer T="KanbanTask" 
+                  Items="KanbanTasks" 
+                  ItemsSelector="@((item,dropzone) => item.State.ToString() == dropzone)"  
+                  UserAttributes="userAtt"
+                  ItemDropped="ItemUpdated"
+                  >
+
+    <MudGrid >
+        <MudItem xs="4">
+            <MudPaper Class="mud-width-full pa-2" MinHeight="400px">
+                <MudContainer Class="d-flex justify-center mb-2">
+                    <MudText Typo="Typo.h6">TODO</MudText>
+                </MudContainer>
+
+                <MudDivider Class="mb-2"/>
+                
+                <MudExpansionPanels MultiExpansion="true" Class="mb-1">
+                    <MudDropZone T="KanbanTask" Identifier="@KanbanTaskState.Todo.ToString()" Class="flex-grow-1" />
+                </MudExpansionPanels>
+
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="4">
+            <MudPaper Class="mud-width-full pa-2" MinHeight="400px">
+                <MudContainer Class="d-flex justify-center mb-2">
+                    <MudText Typo="Typo.h6">In progress</MudText>
+                </MudContainer>
+
+                <MudDivider Class="mb-2"/>
+                
+                <MudExpansionPanels MultiExpansion="true" Class="mb-1">
+                    <MudDropZone T="KanbanTask" Identifier="@KanbanTaskState.InProgress.ToString()" Class="flex-grow-1" />
+                </MudExpansionPanels>
+
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="4">
+            <MudPaper Class="mud-width-full pa-2" MinHeight="400px">
+                <MudContainer Class="d-flex justify-center mb-2">
+                    <MudText Typo="Typo.h6">Done</MudText>
+                </MudContainer>
+
+                <MudDivider Class="mb-2"/>
+                
+                <MudExpansionPanels MultiExpansion="true" Class="mb-1">
+                    <MudDropZone T="KanbanTask" Identifier="@KanbanTaskState.Done.ToString()" Class="flex-grow-1" />
+                </MudExpansionPanels>
+
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+</MudDropContainer>
+
+
+
+@code {
+    List<KanbanTask> KanbanTasks { get; set; } = new();
+    new Dictionary<string, object> userAtt = new Dictionary<string, object>();
+    
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        KanbanTasks = await Http.GetFromJsonAsync<List<KanbanTask>>("sample-data/kanban-task.json") ?? new List<KanbanTask>();
+        userAtt.Add("DeleteCallback", DeleteCalled);
+    }
+
+    void DeleteCalled(int id)
+    {
+        KanbanTasks.RemoveAt(KanbanTasks.FindIndex(t => t.Id == id));
+    }
+
+    
+    bool _success;
+    string[] _errors = { };
+    MudTextField<string>? _addTitle;
+    MudTextField<string>? _addDesc;
+    MudForm? _addForm;
+    
+
+    async void AddNewTask()
+    {
+        await _addForm?.Validate();
+        if (_errors.Any()) return;
+
+        var newTask = new KanbanTask()
+        {
+            Id = 1 + KanbanTasks.Max(t => t.Id),
+            Title = _addTitle?.Value,
+            Description = _addDesc?.Value,
+            State = KanbanTaskState.Todo
+        };
+        
+        KanbanTasks.Add(newTask);
+        
+        _addForm?.Reset();
+    }
+    
+    private void ItemUpdated(MudItemDropInfo<KanbanTask> task)
+    {
+        Enum.TryParse(task.DropzoneIdentifier, out KanbanTaskState taskState);
+        var taskToUpdate = KanbanTasks.Find(t => t.Id == task.Item?.Id);
+
+        if (taskToUpdate == null) throw new Exception("Meh :< task not found....");
+        
+        taskToUpdate.State = taskState;
+    }
+
+}

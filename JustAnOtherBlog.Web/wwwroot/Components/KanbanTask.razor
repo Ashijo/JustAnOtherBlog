@@ -1,0 +1,41 @@
+@using JustAnOtherBlog.Web.wwwroot.Enums
+@inherits MudDynamicDropItem<KanbanTask>
+
+    <MudExpansionPanel Text="@Title">
+        <div class="d-flex justify-space-between">
+            <MudText Class="mr-1">@Description</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" aria-label="delete" OnClick="OnDelete"></MudIconButton>
+        </div>
+    </MudExpansionPanel>
+
+
+@code {
+    public int Id { get; set; }
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public List<KanbanTaskTag>? Tags { get; set; }
+    public KanbanTaskState? State { get; set; }
+
+    [Parameter]
+    public EventCallback<int> DeleteCallback { get; set; } 
+    
+    [Parameter]
+    public KanbanTask? Origin
+    {
+        set
+        {
+            if (value == null) return;
+            Id = value.Id;
+            Title = value.Title;
+            Description = value.Description;
+            Tags = value.Tags;
+            State = value.State;
+        }
+    }
+    
+    async Task OnDelete()
+    {
+        await DeleteCallback.InvokeAsync(Id);
+    }
+
+}
