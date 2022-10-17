@@ -1,8 +1,8 @@
 [
   {
     "id" : 1,
-    "title" : "Buy new cloth",
-    "description" : "My sister want me to go shopping, I hate it !!!",
+    "title" : "test 1",
+    "description" : "Just an other placeholder",
     "tags" : [1,3],
     "state" : 0
   },

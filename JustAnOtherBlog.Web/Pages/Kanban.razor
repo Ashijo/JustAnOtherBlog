@@ -7,6 +7,7 @@
 <PageTitle>Kanban</PageTitle>
 
 <MudText Class="mb-8">Making a Kanban is, in my opinion, one of the best way to learn the basis of a new language/framework</MudText>
+<MudText Class="mb-8">I've learn that drag and drop as a limitation with MubBlazor (and with Blazor more globally. So I guess I have to go for a less inetractive solution than what's I had first anticipate</MudText>
 
 
 <MudPaper Class="pa-4">
@@ -23,12 +24,6 @@
 <MudDivider Class="ma-2" />
 
 
-<MudDropContainer T="KanbanTask" 
-                  Items="KanbanTasks" 
-                  ItemsSelector="@((item,dropzone) => item.State.ToString() == dropzone)"  
-                  UserAttributes="userAtt"
-                  ItemDropped="ItemUpdated"
-                  >
 
     <MudGrid >
         <MudItem xs="4">
@@ -40,7 +35,10 @@
                 <MudDivider Class="mb-2"/>
                 
                 <MudExpansionPanels MultiExpansion="true" Class="mb-1">
-                    <MudDropZone T="KanbanTask" Identifier="@KanbanTaskState.Todo.ToString()" Class="flex-grow-1" />
+                    @foreach (var task in KanbanTasks.Where(t => t.State == KanbanTaskState.Todo))
+                    {
+                        <KanbanTask Origin="@task" DeleteCallback="DeleteCalled" />
+                    }
                 </MudExpansionPanels>
 
             </MudPaper>
@@ -55,7 +53,10 @@
                 <MudDivider Class="mb-2"/>
                 
                 <MudExpansionPanels MultiExpansion="true" Class="mb-1">
-                    <MudDropZone T="KanbanTask" Identifier="@KanbanTaskState.InProgress.ToString()" Class="flex-grow-1" />
+                    @foreach (var task in KanbanTasks.Where(t => t.State == KanbanTaskState.InProgress))
+                    {
+                        <KanbanTask Origin="@task" DeleteCallback="DeleteCalled" />
+                    }
                 </MudExpansionPanels>
 
             </MudPaper>
@@ -70,27 +71,25 @@
                 <MudDivider Class="mb-2"/>
                 
                 <MudExpansionPanels MultiExpansion="true" Class="mb-1">
-                    <MudDropZone T="KanbanTask" Identifier="@KanbanTaskState.Done.ToString()" Class="flex-grow-1" />
+                    @foreach (var task in KanbanTasks.Where(t => t.State == KanbanTaskState.Done))
+                    {
+                        <KanbanTask Origin="@task" DeleteCallback="DeleteCalled" />
+                    }
                 </MudExpansionPanels>
 
             </MudPaper>
         </MudItem>
 
     </MudGrid>
-</MudDropContainer>
 
 
 
 @code {
     List<KanbanTask> KanbanTasks { get; set; } = new();
-    new Dictionary<string, object> userAtt = new Dictionary<string, object>();
-    
-    
 
     protected override async Task OnInitializedAsync()
     {
         KanbanTasks = await Http.GetFromJsonAsync<List<KanbanTask>>("sample-data/kanban-task.json") ?? new List<KanbanTask>();
-        userAtt.Add("DeleteCallback", DeleteCalled);
     }
 
     void DeleteCalled(int id)
@@ -104,7 +103,6 @@
     MudTextField<string>? _addTitle;
     MudTextField<string>? _addDesc;
     MudForm? _addForm;
-    
 
     async void AddNewTask()
     {
@@ -124,14 +122,4 @@
         _addForm?.Reset();
     }
     
-    private void ItemUpdated(MudItemDropInfo<KanbanTask> task)
-    {
-        Enum.TryParse(task.DropzoneIdentifier, out KanbanTaskState taskState);
-        var taskToUpdate = KanbanTasks.Find(t => t.Id == task.Item?.Id);
-
-        if (taskToUpdate == null) throw new Exception("Meh :< task not found....");
-        
-        taskToUpdate.State = taskState;
-    }
-
 }
